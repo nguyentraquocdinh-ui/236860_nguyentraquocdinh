@@ -1,0 +1,15 @@
+# Loại bỏ thư mục dependencies
+node_modules/
+
+# Loại bỏ các tệp chứa bí mật, môi trường
+.env
+*.env
+.env.local
+
+# Loại bỏ các tệp build / dist
+dist/
+build/
+
+# Các tệp hệ thống
+.DS_Store
+Thumbs.db
