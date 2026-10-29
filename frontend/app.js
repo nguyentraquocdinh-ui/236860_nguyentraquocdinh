@@ -1,17 +1,28 @@
 let foodModal, detailModal;
 
-document.addEventListener('DOMContentLoaded', () => {
+function initializeApp() {
   foodModal = new bootstrap.Modal(document.getElementById('foodModal'));
   detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
-  
-  // Tải danh sách món ăn ban đầu
+
   fetchFoods();
 
-  // Bắt sự kiện nhấn Enter trong ô tìm kiếm
   document.getElementById('searchInput').addEventListener('keyup', (e) => {
     if (e.key === 'Enter') handleSearch();
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp, { once: true });
+} else {
+  initializeApp();
+}
+
+function getApiUrl(path = '') {
+  if (!API_BASE_URL) {
+    throw new Error('Chưa cấu hình URL API backend. Hãy đặt FOOD_API_BASE_URL trong frontend/config.js.');
+  }
+  return `${API_BASE_URL}${path}`;
+}
 
 // Hàm hiển thị thông báo Alert
 function showAlert(message, type = 'success') {
@@ -34,12 +45,15 @@ async function fetchFoods(searchQuery = '') {
   tableBody.innerHTML = '';
 
   try {
-    let url = API_BASE_URL;
+    let url = getApiUrl();
     if (searchQuery) {
       url += `?search=${encodeURIComponent(searchQuery)}`;
     }
 
     const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Backend trả về lỗi HTTP ${res.status}.`);
+    }
     const result = await res.json();
 
     if (result.success) {
@@ -48,7 +62,7 @@ async function fetchFoods(searchQuery = '') {
       showAlert(result.message || 'Không thể lấy dữ liệu', 'danger');
     }
   } catch (error) {
-    showAlert('Lỗi kết nối tới Server Backend!', 'danger');
+    showAlert(error.message || 'Lỗi kết nối tới Server Backend!', 'danger');
   } finally {
     spinner.classList.add('d-none');
   }
@@ -94,7 +108,7 @@ function handleSearch() {
 // 2. Xem chi tiết món ăn
 async function viewDetail(id) {
   try {
-    const res = await fetch(`${API_BASE_URL}/${id}`);
+    const res = await fetch(getApiUrl(`/${encodeURIComponent(id)}`));
     const result = await res.json();
 
     if (result.success) {
@@ -129,7 +143,7 @@ function openAddModal() {
 // Mở Modal Cập nhật
 async function openEditModal(id) {
   try {
-    const res = await fetch(`${API_BASE_URL}/${id}`);
+    const res = await fetch(getApiUrl(`/${encodeURIComponent(id)}`));
     const result = await res.json();
 
     if (result.success) {
@@ -155,6 +169,9 @@ async function openEditModal(id) {
 
 // 3 & 4. Lưu dữ liệu (Thêm mới / Cập nhật)
 async function saveFood() {
+  const form = document.getElementById('foodForm');
+  if (!form.reportValidity()) return;
+
   const mongoId = document.getElementById('mongoId').value;
   const foodId = document.getElementById('foodId').value.trim();
   const name = document.getElementById('foodName').value.trim();
@@ -178,14 +195,14 @@ async function saveFood() {
     let res, result;
     if (mongoId) {
       // Cập nhật (PUT)
-      res = await fetch(`${API_BASE_URL}/${mongoId}`, {
+      res = await fetch(getApiUrl(`/${encodeURIComponent(mongoId)}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
       });
     } else {
       // Thêm mới (POST)
-      res = await fetch(API_BASE_URL, {
+      res = await fetch(getApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
@@ -202,7 +219,7 @@ async function saveFood() {
       showAlert(result.message || 'Thao tác thất bại!', 'danger');
     }
   } catch (error) {
-    showAlert('Có lỗi xảy ra khi kết nối tới hệ thống!', 'danger');
+    showAlert(error.message || 'Có lỗi xảy ra khi kết nối tới hệ thống!', 'danger');
   }
 }
 
@@ -211,7 +228,7 @@ async function deleteFood(id, name) {
   if (!confirm(`Bạn có chắc chắn muốn xóa món "${name}" không?`)) return;
 
   try {
-    const res = await fetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' });
+    const res = await fetch(getApiUrl(`/${encodeURIComponent(id)}`), { method: 'DELETE' });
     const result = await res.json();
 
     if (result.success) {

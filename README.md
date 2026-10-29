@@ -18,5 +18,7 @@
 
 ### Frontend
 1. Di chuyển vào thư mục frontend: `cd frontend`
-2. Cài đặt các thư viện: `npm install`
-3. Chạy ứng dụng: `npm start`
+2. Khi chạy local, frontend mặc định gọi backend tại `http://localhost:5000`.
+3. Khi deploy frontend riêng trên Render, đặt URL backend trong `frontend/config.js`, ví dụ thêm dòng `window.FOOD_API_BASE_URL = 'https://ten-backend.onrender.com/api/foods';` trước khi khai báo `API_BASE_URL`.
+
+Frontend tải danh sách món ngay khi trang mở. Nếu chạy trên môi trường không phải localhost mà chưa cấu hình URL backend, trang sẽ báo cấu hình còn thiếu thay vì gửi yêu cầu sai tới máy người dùng.
